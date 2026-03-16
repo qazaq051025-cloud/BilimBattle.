@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BilimBattle ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07071a;--card:#10103a;--card2:#16163e;
+  --pri:#5b6ef5;--pg:rgba(91,110,245,.45);
+  --acc:#ff4d8b;--gold:#ffd700;
+  --ok:#00e676;--err:#ff1744;
+  --t:#e8e8ff;--t2:#7878aa;
+  --r:16px;--fn:'Orbitron',monospace;--fb:'Nunito',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* SCREENS */
+.screen{display:none;position:relative;z-index:1;min-height:100vh}
+.screen.on{display:block}
+
+/* INPUTS */
+input,select,textarea{
+  background:var(--card);border:1.5px solid rgba(91,110,245,.3);border-radius:var(--r);
+  color:var(--t);font-family:var(--fb);font-size:15px;padding:13px 16px;
+  outline:none;width:100%;transition:.2s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--pg)}
+input::placeholder,textarea::placeholder{color:var(--t2)}
+textarea{resize:vertical;min-height:80px}
+select{cursor:pointer}
+
+/* BUTTONS */
+.btn{
+  border:none;border-radius:var(--r);cursor:pointer;
+  font-family:var(--fb);font-weight:800;transition:.2s;
+}
+.btn-pri{
+  background:linear-gradient(135deg,var(--pri),#7c3aed);color:#fff;
+  padding:14px;font-size:16px;width:100%;
+  box-shadow:0 4px 20px var(--pg);
+}
+.btn-pri:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--pg)}
+.btn-pri.sm{padding:10px 20px;font-size:14px;width:auto}
+.btn-pri.big{font-size:18px;padding:18px;margin-top:8px}
+.btn-out{
+  background:transparent;border:2px solid var(--pri);color:var(--pri);
+  padding:12px;font-size:15px;width:100%;
+}
+.btn-out:hover{background:var(--pri);color:#fff}
+.btn-ghost{
+  background:transparent;border:1.5px solid rgba(91,110,245,.3);color:var(--t2);
+  padding:8px 16px;font-size:14px;border-radius:10px;
+}
+.btn-ghost:hover{border-color:var(--pri);color:var(--pri)}
+.btn-ai{
+  background:linear-gradient(135deg,#ff4d8b,#ff8c42);color:#fff;border:none;
+  border-radius:var(--r);padding:10px 20px;font-family:var(--fb);font-weight:800;font-size:14px;
+  cursor:pointer;flex:1;box-shadow:0 4px 16px rgba(255,77,139,.4);transition:.2s;
+}
+.btn-ai:hover{transform:translateY(-2px)}
+.btn-ai:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.hidden{display:none!important}
+
+/* NAV */
+.nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;background:rgba(7,7,26,.9);
+  backdrop-filter:blur(12px);border-bottom:1px solid rgba(91,110,245,.2);
+  position:sticky;top:0;z-index:100;
+}
+.nav-logo{font-family:var(--fn);font-weight:700;font-size:18px;color:var(--pri)}
+.nav-acts{display:flex;gap:8px;align-items:center}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--card2);border:1px solid rgba(91,110,245,.3);border-radius:50px;
+  padding:13px 28px;font-weight:700;font-size:15px;z-index:9999;
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--ok);color:var(--ok)}
+#toast.err{border-color:var(--err);color:var(--err)}
+#toast.info{border-color:var(--pri);color:var(--pri)}
+
+/* BADGE */
+.badge{background:var(--pri);color:#fff;border-radius:50px;font-size:12px;padding:2px 10px;margin-left:6px}
+
+/* ============ SPLASH ============ */
+#s-splash{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:24px;gap:20px;
+}
+.logo-icon{font-size:64px;animation:float 3s ease-in-out infinite;display:block;text-align:center}
+.logo-txt{font-family:var(--fn);font-size:clamp(36px,8vw,60px);font-weight:900;text-align:center;
+  text-shadow:0 0 40px var(--pg)}
+.logo-txt span{color:var(--acc);text-shadow:0 0 30px rgba(255,77,139,.6)}
+.logo-sub{color:var(--t2);font-size:14px;letter-spacing:1px}
+.tabs{display:flex;gap:6px;background:var(--card);border-radius:50px;padding:5px;border:1px solid rgba(91,110,245,.2)}
+.tab{background:transparent;border:none;color:var(--t2);padding:10px 32px;border-radius:50px;
+  cursor:pointer;font-family:var(--fb);font-weight:700;font-size:14px;transition:.2s}
+.tab.on{background:var(--pri);color:#fff;box-shadow:0 4px 16px var(--pg)}
+.auth-form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px}
+.err-txt{color:var(--err);font-size:13px;text-align:center;min-height:18px}
+.stu-hint{color:var(--t2);font-size:14px;text-align:center}
+.stu-hint a{color:var(--pri);text-decoration:none;font-weight:700}
+
+/* ============ DASHBOARD ============ */
+.dash-body{padding:28px 24px;max-width:1100px;margin:0 auto}
+.dash-welcome h2{font-size:26px;font-family:var(--fn);margin-bottom:6px}
+.dash-welcome p{color:var(--t2)}
+.type-row{display:flex;gap:10px;margin:20px 0 16px;flex-wrap:wrap}
+.type-badge{border-radius:50px;padding:7px 18px;font-size:12px;font-weight:800;letter-spacing:.5px}
+.tb-team{background:rgba(91,110,245,.15);border:1px solid var(--pri);color:var(--pri)}
+.tb-solo{background:rgba(255,77,139,.15);border:1px solid var(--acc);color:var(--acc)}
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-bottom:32px}
+.mc{
+  background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;
+  padding:24px 18px;text-align:center;cursor:pointer;transition:.25s;position:relative;overflow:hidden;
+}
+.mc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--pg),transparent);opacity:0;transition:.3s}
+.mc:hover::before{opacity:1}
+.mc:hover{transform:translateY(-4px);border-color:var(--pri);box-shadow:0 16px 48px rgba(91,110,245,.3)}
+.mc.feat{border-color:var(--acc);background:linear-gradient(135deg,#1a0a1a,#2a0a2a)}
+.mc.feat:hover{box-shadow:0 16px 48px rgba(255,77,139,.4)}
+.mc.team-mc{border-top:2px solid var(--pri)}
+.mc.solo-mc{border-top:2px solid var(--acc)}
+.mc-icon{font-size:44px;display:block;margin-bottom:10px}
+.mc h3{font-family:var(--fn);font-size:13px;margin-bottom:5px}
+.mc p{color:var(--t2);font-size:12px}
+.mc-badge{position:absolute;top:10px;right:10px;background:var(--acc);color:#fff;
+  font-size:10px;font-weight:800;padding:3px 8px;border-radius:50px}
+.mc-tag{position:absolute;bottom:10px;right:10px;border-radius:50px;font-size:10px;font-weight:800;padding:3px 8px}
+.team-tag{background:rgba(91,110,245,.3);color:#a0acff}
+.solo-tag{background:rgba(255,77,139,.3);color:#ff8ab4}
+.recent h3{font-size:17px;margin-bottom:12px}
+.qmini{display:flex;flex-direction:column;gap:8px}
+.qm-item{
+  background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:12px;
+  padding:13px 16px;display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;transition:.2s;
+}
+.qm-item:hover{border-color:var(--pri);background:var(--card2)}
+.qm-title{font-weight:700;font-size:14px}
+.qm-meta{font-size:12px;color:var(--t2)}
+.qm-acts{display:flex;gap:6px}
+
+/* ============ EDITOR ============ */
+.ed-body{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:20px 24px;max-width:1200px;margin:0 auto}
+.ed-left{display:flex;flex-direction:column;gap:16px}
+.ed-meta{display:flex;flex-direction:column;gap:8px}
+.box{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:var(--r);padding:16px}
+.box h4{font-size:14px;margin-bottom:10px}
+.ai-opts{display:flex;gap:8px;margin-top:8px;align-items:center}
+.ai-status{font-size:13px;color:var(--t2);margin-top:6px;min-height:20px}
+.spinner{width:24px;height:24px;border:3px solid rgba(91,110,245,.3);border-top-color:var(--pri);
+  border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.import-hint{font-size:12px;color:var(--t2);margin-bottom:8px}
+.fmt-hint{background:rgba(0,0,0,.3);border-radius:10px;padding:10px;margin-bottom:8px}
+.fmt-hint code{font-size:11px;color:var(--gold);line-height:1.9}
+.ed-right{display:flex;flex-direction:column}
+.qh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.qh h4{font-size:15px}
+.btn-addq{background:var(--ok);border:none;border-radius:10px;color:#000;
+  cursor:pointer;font-weight:800;font-size:13px;padding:9px 16px;transition:.2s}
+.btn-addq:hover{transform:scale(1.04)}
+.qlist{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.qi{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:var(--r);padding:16px}
+.qi-hdr{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+.qi-num{font-family:var(--fn);font-size:12px;color:var(--pri);white-space:nowrap;padding-top:7px}
+.qi-txt{background:transparent;border:none;border-bottom:1px solid rgba(91,110,245,.25);
+  color:var(--t);font-family:var(--fb);font-size:14px;flex:1;padding:6px 0;outline:none}
+.qi-txt:focus{border-bottom-color:var(--pri)}
+.btn-delq{background:transparent;border:none;color:var(--err);cursor:pointer;font-size:17px;padding:4px}
+.ans-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ai-item{display:flex;gap:6px;align-items:center}
+.al{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;
+  cursor:pointer;border:2px solid transparent;transition:.2s}
+.al.A{background:rgba(255,77,77,.3);color:#ff4d4d}
+.al.B{background:rgba(77,137,255,.3);color:#4d89ff}
+.al.C{background:rgba(77,255,127,.3);color:#4dff7f}
+.al.D{background:rgba(255,215,0,.3);color:#ffd700}
+.al.cor{border-color:var(--ok);box-shadow:0 0 8px var(--ok)}
+.ai-inp{background:rgba(255,255,255,.05);border:1px solid rgba(91,110,245,.2);border-radius:8px;
+  color:var(--t);font-family:var(--fb);font-size:12px;flex:1;padding:7px 9px;outline:none;width:auto}
+.ai-inp:focus{border-color:var(--pri)}
+.qi-hint{font-size:11px;color:var(--t2);margin-top:6px}
+
+/* ============ QUIZZES LIB ============ */
+.qlib{padding:24px;max-width:1200px;margin:0 auto}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.qcard{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;padding:22px;
+  cursor:pointer;transition:.25s}
+.qcard:hover{transform:translateY(-4px);border-color:var(--pri);box-shadow:0 16px 40px rgba(91,110,245,.2)}
+.qcard-title{font-size:17px;font-weight:800;margin-bottom:8px}
+.qcard-meta{color:var(--t2);font-size:12px;display:flex;gap:10px;flex-wrap:wrap}
+.qcard-meta span{background:rgba(255,255,255,.05);border-radius:6px;padding:3px 8px}
+.qcard-acts{display:flex;gap:8px;margin-top:14px}
+.bsm{border:1px solid rgba(91,110,245,.2);border-radius:8px;background:transparent;
+  color:var(--t2);cursor:pointer;font-size:12px;padding:7px 11px;transition:.2s}
+.bsm:hover{border-color:var(--pri);color:var(--pri)}
+.bsm.d:hover{border-color:var(--err);color:var(--err)}
+
+/* ============ SETUP ============ */
+.setup-body{display:grid;grid-template-columns:1fr 280px;gap:28px;padding:28px 24px;max-width:900px;margin:0 auto}
+.setup-form{display:flex;flex-direction:column;gap:20px}
+.setup-form h3{font-size:14px;font-family:var(--fn);color:var(--t2);margin-bottom:6px}
+.setup-ql{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
+.sqi{background:var(--card);border:2px solid transparent;border-radius:12px;
+  padding:11px 15px;cursor:pointer;transition:.2s;display:flex;justify-content:space-between;align-items:center}
+.sqi:hover{border-color:var(--pri)}
+.sqi.sel{border-color:var(--pri);background:rgba(91,110,245,.1)}
+.cnt-row{display:flex;align-items:center;gap:14px}
+.cnt-btns{display:flex;gap:6px}
+.cnt-btn{width:42px;height:42px;border-radius:12px;border:2px solid rgba(91,110,245,.3);
+  background:transparent;color:var(--t);font-size:17px;font-weight:800;cursor:pointer;transition:.2s}
+.cnt-btn.on{border-color:var(--pri);background:rgba(91,110,245,.2);color:var(--pri)}
+.tnames{display:flex;flex-direction:column;gap:8px}
+.tnrow{display:flex;align-items:center;gap:10px}
+.tdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.tog-wrap{display:flex;align-items:center;gap:10px;cursor:pointer}
+.tog-wrap input{display:none}
+.tog-sl{width:46px;height:24px;background:var(--card2);border-radius:50px;position:relative;
+  transition:.3s;border:1px solid rgba(91,110,245,.3)}
+.tog-sl::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;
+  background:var(--t2);border-radius:50%;transition:.3s}
+.tog-wrap input:checked+.tog-sl{background:var(--pri)}
+.tog-wrap input:checked+.tog-sl::after{left:25px;background:#fff}
+.timer-opts{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{border:2px solid rgba(91,110,245,.3);border-radius:10px;background:transparent;
+  color:var(--t2);cursor:pointer;font-weight:700;padding:9px 16px;transition:.2s}
+.tbtn.on{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.1)}
+.setup-qr{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;
+  padding:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.room-code{font-family:var(--fn);font-size:38px;font-weight:900;letter-spacing:8px;
+  color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,.6)}
+.solo-inf{background:rgba(91,110,245,.08);border:1px solid var(--pri);border-radius:14px;
+  padding:16px;display:flex;gap:12px;align-items:flex-start;font-size:13px}
+
+/* ============ BILIMBATTLE GAME ============ */
+#s-game-bb{
+  background:radial-gradient(ellipse at 20% 30%,#1a0a2e 0%,#07071a 50%,#001520 100%);
+  min-height:100vh;position:relative;
+}
+.bb-topbar{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 18px;position:relative;z-index:10}
+.bb-scores-row{display:flex;gap:8px;flex-wrap:wrap}
+.bb-chip{
+  background:rgba(16,16,58,.85);border:2px solid transparent;border-radius:14px;
+  padding:8px 14px 8px 10px;display:flex;align-items:center;gap:8px;
+  min-width:110px;backdrop-filter:blur(8px);transition:.3s;
+}
+.bb-chip.on{border-color:var(--gold)!important;box-shadow:0 0 20px rgba(255,215,0,.35);animation:glow 1.5s ease-in-out infinite alternate}
+.chip-ani{font-size:22px}
+.chip-name{font-size:12px;font-weight:700}
+.chip-pts{font-family:var(--fn);font-size:18px;font-weight:900;color:var(--gold);line-height:1}
+.stk{font-size:11px;font-weight:800;color:#ff4500;animation:fire 1s infinite alternate}
+.bb-tmr-badge{
+  background:rgba(16,16,58,.85);border:2px solid var(--gold);border-radius:12px;
+  padding:9px 18px;font-family:var(--fn);font-size:26px;font-weight:900;color:var(--gold);
+  min-width:64px;text-align:center;backdrop-filter:blur(8px);transition:.3s;
+}
+.bb-tmr-badge.dng{border-color:var(--err);color:var(--err);animation:tdng .5s ease-in-out infinite alternate}
+.bb-center{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;padding:16px;min-height:calc(100vh - 90px);position:relative;z-index:5}
+.bb-active-lbl{
+  background:rgba(16,16,58,.7);border:1.5px solid rgba(91,110,245,.4);border-radius:50px;
+  padding:11px 28px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;
+  backdrop-filter:blur(8px);animation:slideDown .4s ease;
+}
+.num-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:380px;width:100%}
+.nc{
+  aspect-ratio:1.8/1;border-radius:50px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 4px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2);position:relative;overflow:hidden;
+}
+.nc::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.18),transparent 60%);border-radius:inherit;pointer-events:none}
+.nc:hover:not(.used){transform:scale(1.14) translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,.6)}
+.nc:active:not(.used){transform:scale(.95)}
+.nc.used{background:rgba(255,255,255,.04)!important;cursor:default;box-shadow:none}
+.nc-num{font-family:var(--fn);font-size:17px;font-weight:900;color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.5);position:relative;z-index:1}
+
+/* Question modal */
+.q-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.78);backdrop-filter:blur(6px)}
+.qm-inner{background:var(--card);border:1px solid rgba(91,110,245,.25);border-radius:24px;
+  padding:28px;max-width:620px;width:90%;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.qm-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.qm-tmr{background:rgba(255,215,0,.12);border:2px solid var(--gold);border-radius:50px;
+  padding:6px 16px;font-family:var(--fn);font-size:19px;font-weight:900;color:var(--gold)}
+.qm-tmr.dng{border-color:var(--err);color:var(--err);animation:tdng .5s ease-in-out infinite alternate}
+.qm-q{font-size:clamp(15px,2.5vw,21px);font-weight:700;text-align:center;line-height:1.5;margin-bottom:22px}
+.qm-ans{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qm-btn{border-radius:14px;border:2px solid rgba(255,255,255,.12);cursor:pointer;
+  font-family:var(--fb);font-size:14px;font-weight:700;padding:15px 12px;
+  text-align:center;color:#fff;transition:.2s;display:flex;align-items:center;gap:8px;animation:slideUp .3s ease both}
+.qm-btn:nth-child(1){animation-delay:.05s}.qm-btn:nth-child(2){animation-delay:.1s}
+.qm-btn:nth-child(3){animation-delay:.15s}.qm-btn:nth-child(4){animation-delay:.2s}
+.qm-btn.c0{background:rgba(229,57,53,.35)}.qm-btn.c1{background:rgba(21,101,192,.35)}
+.qm-btn.c2{background:rgba(46,125,50,.35)}.qm-btn.c3{background:rgba(245,127,23,.35)}
+.qm-btn:hover:not(:disabled){transform:scale(1.03);border-color:rgba(255,255,255,.4)}
+.qm-btn.cor{background:var(--ok)!important;border-color:var(--ok)!important}
+.qm-btn.wrg{background:var(--err)!important;border-color:var(--err)!important}
+.qm-ltr{background:rgba(0,0,0,.25);border-radius:7px;width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+
+/* Result popup */
+.rpop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:300;background:rgba(0,0,0,.72);backdrop-filter:blur(4px)}
+.ri{background:var(--card);border-radius:24px;padding:36px;text-align:center;
+  max-width:380px;width:90%;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);border:2px solid}
+.ri.ok{border-color:var(--ok)}.ri.ng{border-color:var(--err)}
+.r-emo{font-size:68px;display:block;margin-bottom:14px}
+.ri h2{font-size:24px;font-family:var(--fn);margin-bottom:8px}
+.ri p{color:var(--t2);margin-bottom:18px}
+
+/* ============ MONSTER RAID ============ */
+#s-game-mon{background:linear-gradient(180deg,#050510 0%,#0a0a20 100%);min-height:100vh}
+.mon-hdr{padding:14px 22px;background:rgba(0,0,0,.55);backdrop-filter:blur(10px)}
+.boss-info{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px}
+.boss-nm{font-family:var(--fn);font-size:19px;color:var(--err);text-shadow:0 0 20px rgba(255,23,68,.5)}
+.hp-wrap{width:100%;max-width:580px;height:18px;background:rgba(255,255,255,.1);
+  border-radius:50px;overflow:hidden;border:1px solid rgba(255,23,68,.3)}
+#hp-bar{height:100%;background:linear-gradient(90deg,#ff1744,#ff6d00);border-radius:50px;transition:width .6s ease;position:relative;overflow:hidden}
+#hp-bar::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shine 2s linear infinite}
+.hp-txt{font-size:12px;color:var(--t2)}
+.mon-arena{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:22px;max-width:1100px;margin:0 auto}
+.mon-sprite{display:flex;align-items:center;justify-content:center;min-height:280px}
+#mon-svg{width:260px;height:280px;display:flex;align-items:center;justify-content:center}
+#mon-svg svg{width:100%;height:100%;filter:drop-shadow(0 0 28px rgba(255,23,68,.5));animation:mfloat 3s ease-in-out infinite}
+.mon-qwrap{display:flex;flex-direction:column;gap:14px}
+.qcard{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;
+  padding:24px 30px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideDown .4s cubic-bezier(.34,1.56,.64,1)}
+.qcard p{font-size:clamp(15px,2.5vw,22px);font-weight:700;line-height:1.5}
+.qn{font-size:11px;color:var(--t2);font-family:var(--fn);margin-bottom:8px}
+.man-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.man-btn{border-radius:14px;border:2px solid rgba(255,255,255,.14);cursor:pointer;
+  font-family:var(--fb);font-size:14px;font-weight:700;padding:15px;text-align:center;
+  color:#fff;transition:.2s;animation:slideUp .3s ease both}
+.man-btn:nth-child(1){animation-delay:.05s}.man-btn:nth-child(2){animation-delay:.1s}
+.man-btn:nth-child(3){animation-delay:.15s}.man-btn:nth-child(4){animation-delay:.2s}
+.man-btn.A{background:rgba(229,57,53,.3)}.man-btn.B{background:rgba(21,101,192,.3)}
+.man-btn.C{background:rgba(46,125,50,.3)}.man-btn.D{background:rgba(245,127,23,.3)}
+.man-btn:hover:not(:disabled){transform:scale(1.04);border-color:rgba(255,255,255,.45)}
+.man-btn.cor{background:var(--ok)!important;border-color:var(--ok)!important}
+.man-btn.wrg{background:var(--err)!important;border-color:var(--err)!important}
+.tb-wrap{height:9px;background:rgba(255,255,255,.1);border-radius:50px;overflow:hidden}
+.tb{height:100%;width:100%;background:linear-gradient(90deg,var(--ok),#8bc34a);border-radius:50px;transition:width 1s linear,background .5s}
+.tb.warn{background:linear-gradient(90deg,var(--gold),#ff8c00)}.tb.dng{background:var(--err)}
+.dmg-num{position:absolute;font-family:var(--fn);font-size:34px;font-weight:900;
+  color:var(--err);text-shadow:0 0 20px rgba(255,23,68,.8);pointer-events:none;animation:dmgfloat 1.2s ease forwards;z-index:50}
+.dmg-num.crit{color:var(--gold);font-size:46px}
+
+/* ============ SOLO LOBBY ============ */
+.sl-body{max-width:700px;margin:0 auto;padding:28px 22px;display:flex;flex-direction:column;gap:22px}
+.sl-code-banner{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;padding:28px;text-align:center}
+.sl-bigcode{font-family:var(--fn);font-size:clamp(36px,10vw,68px);font-weight:900;
+  letter-spacing:12px;color:var(--gold);text-shadow:0 0 28px rgba(255,215,0,.7);animation:pulse 2s ease-in-out infinite}
+.sl-inforow{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap;font-size:13px}
+.sl-lb{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;overflow:hidden;min-height:180px}
+.sl-lbhdr{display:grid;grid-template-columns:44px 1fr 80px 70px 60px;padding:11px 18px;
+  background:rgba(255,255,255,.04);font-size:11px;color:var(--t2);text-transform:uppercase;font-weight:700;letter-spacing:1px}
+.sl-lbrow{display:grid;grid-template-columns:44px 1fr 80px 70px 60px;padding:13px 18px;
+  border-top:1px solid rgba(91,110,245,.15);align-items:center;font-size:13px}
+.sl-lbrow.top{background:rgba(255,215,0,.06)}
+.lb-nm{font-weight:700}.lb-sc{font-family:var(--fn);color:var(--gold);font-weight:700}
+.lb-ok{color:var(--ok)}.lb-tm{color:var(--t2)}
+
+/* ============ STUDENT JOIN ============ */
+#s-stu{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;gap:18px;text-align:center}
+.big-inp{font-size:30px;text-align:center;letter-spacing:10px;font-family:var(--fn);max-width:280px}
+
+/* ============ STUDENT QUIZ ============ */
+#s-stuq{background:linear-gradient(180deg,#07071a,#0a0a1a);min-height:100vh}
+.sq-hdr{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.7);backdrop-filter:blur(10px)}
+.sq-prog-wrap{height:5px;background:rgba(255,255,255,.1)}
+.sq-prog{height:100%;background:linear-gradient(90deg,var(--pri),var(--acc));transition:width .5s}
+.sq-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 18px}
+.sq-tmr-wrap{display:flex;align-items:center;gap:7px}
+.sq-tmr-num{font-family:var(--fn);font-size:19px;font-weight:900;min-width:26px;text-align:right}
+.sq-tmr-num.dng{color:var(--err);animation:tdng .5s ease-in-out infinite alternate}
+.sq-tmr-track{width:76px;height:7px;background:rgba(255,255,255,.1);border-radius:50px;overflow:hidden}
+.sq-tb{height:100%;width:100%;background:linear-gradient(90deg,var(--ok),#8bc34a);border-radius:50px;transition:width 1s linear,background .5s}
+.sq-tb.warn{background:linear-gradient(90deg,var(--gold),#ff8c00)}.sq-tb.dng{background:var(--err)}
+.sq-body{padding:18px;display:flex;flex-direction:column;align-items:center;gap:18px;max-width:660px;margin:0 auto}
+.sq-qcard{width:100%}
+.sq-agrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.sq-abtn{border-radius:14px;border:2px solid rgba(255,255,255,.12);cursor:pointer;
+  font-family:var(--fb);font-size:14px;font-weight:700;padding:16px 13px;
+  text-align:left;display:flex;align-items:center;gap:10px;color:#fff;transition:.2s;animation:slideUp .3s ease both}
+.sq-abtn.A{background:rgba(229,57,53,.3)}.sq-abtn.B{background:rgba(21,101,192,.3)}
+.sq-abtn.C{background:rgba(46,125,50,.3)}.sq-abtn.D{background:rgba(245,127,23,.3)}
+.sq-abtn:hover:not(:disabled){transform:scale(1.03)}
+.sq-abtn.cor{background:var(--ok)!important;border-color:var(--ok)!important}
+.sq-abtn.wrg{background:var(--err)!important;border-color:var(--err)!important}
+.sq-ltr{background:rgba(0,0,0,.25);border-radius:7px;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.sq-fb{font-size:15px;font-weight:800;padding:12px 24px;border-radius:50px;text-align:center;animation:popIn .3s ease}
+.sq-fb.ok{background:rgba(0,230,118,.18);color:var(--ok);border:1px solid var(--ok)}
+.sq-fb.ng{background:rgba(255,23,68,.18);color:var(--err);border:1px solid var(--err)}
+
+/* ============ STUDENT RESULT ============ */
+#s-sres{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;gap:14px;text-align:center}
+.sr-emo{font-size:76px;animation:bounceIn .6s ease}
+.sr-grd{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--pri),#7c3aed);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px var(--pg);animation:float 3s ease-in-out infinite}
+.sr-grd span{font-family:var(--fn);font-size:40px;font-weight:900}
+.sr-stats{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.sr-stat{display:flex;flex-direction:column;align-items:center;gap:3px}
+.sr-val{font-family:var(--fn);font-size:26px;font-weight:900;color:var(--gold)}
+
+/* ============ RESULTS ============ */
+#s-results{min-height:100vh}
+.res-wrap{display:flex;flex-direction:column;align-items:center;padding:36px 24px;gap:28px}
+.res-title{font-family:var(--fn);font-size:clamp(26px,6vw,46px);text-align:center;text-shadow:0 0 40px var(--gold)}
+.podium{display:flex;align-items:flex-end;gap:14px;justify-content:center}
+.pod-place{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pod-bar{width:96px;border-radius:12px 12px 0 0;display:flex;align-items:flex-end;
+  justify-content:center;padding-bottom:10px;font-size:12px;font-weight:800;color:#000}
+.pod-nm{font-weight:800;font-size:13px;text-align:center}
+.pod-pts{font-family:var(--fn);font-size:12px;color:var(--t2)}
+.pod-med{font-size:30px}
+.scores-tbl{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;padding:22px;width:100%;max-width:480px}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(91,110,245,.15)}
+.srow:last-child{border-bottom:none}
+.res-acts{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.res-acts .btn-pri,.res-acts .btn-out{width:190px}
+
+/* ============ ADMIN ============ */
+.adm-body{padding:28px 24px;max-width:1000px;margin:0 auto}
+.adm-body h2{margin-bottom:22px;font-family:var(--fn)}
+.adm-tbl-wrap{background:var(--card);border:1px solid rgba(91,110,245,.2);border-radius:20px;overflow:hidden}
+.adm-tbl{width:100%;border-collapse:collapse}
+.adm-tbl th{background:rgba(255,255,255,.04);padding:12px 18px;text-align:left;font-size:12px;color:var(--t2);text-transform:uppercase;letter-spacing:1px}
+.adm-tbl td{padding:12px 18px;border-top:1px solid rgba(91,110,245,.15);font-size:13px}
+.adm-tbl tr:hover td{background:rgba(255,255,255,.02)}
+.breset,.bdel{border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;padding:5px 11px;margin:0 3px;transition:.2s}
+.breset{background:rgba(255,215,0,.18);color:var(--gold)}.breset:hover{background:rgba(255,215,0,.35)}
+.bdel{background:rgba(255,23,68,.18);color:var(--err)}.bdel:hover{background:rgba(255,23,68,.35)}
+
+/* ============ CONFETTI ============ */
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:400}
+
+/* ============ KEYFRAMES ============ */
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes mfloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+@keyframes glow{from{box-shadow:0 0 10px rgba(255,215,0,.2)}to{box-shadow:0 0 24px rgba(255,215,0,.6),0 0 48px rgba(255,215,0,.2)}}
+@keyframes fire{from{text-shadow:0 0 10px #ff4500}to{text-shadow:0 0 20px #ffd700}}
+@keyframes tdng{from{box-shadow:0 0 0 0 rgba(255,23,68,.4);transform:scale(1)}to{box-shadow:0 0 0 8px rgba(255,23,68,0);transform:scale(1.06)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes popIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideDown{from{transform:translateY(-40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+@keyframes podiumRise{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes shine{0%{left:-100%}100%{left:200%}}
+@keyframes dmgfloat{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-80px) scale(.6);opacity:0}}
+@keyframes critHit{0%{transform:scale(1)}25%{transform:scale(1.4) rotate(-5deg)}50%{transform:scale(.9) rotate(5deg)}100%{transform:scale(1)}}
+@keyframes monsterDeath{0%{opacity:1;transform:scale(1) rotate(0)}50%{opacity:.5;transform:scale(1.2) rotate(15deg)}100%{opacity:0;transform:scale(0) rotate(30deg)}}
+@keyframes particle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+
+@media(max-width:700px){
+  .ed-body{grid-template-columns:1fr}
+  .setup-body{grid-template-columns:1fr}
+  .mon-arena{grid-template-columns:1fr}
+  .mon-sprite{min-height:200px}
+  #mon-svg{width:180px;height:200px}
+  .num-grid{grid-template-columns:repeat(4,1fr);max-width:300px}
+  .qm-ans,.sq-agrid,.man-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<!-- SPLASH -->
+<div id="s-splash" class="screen on">
+  <span class="logo-icon">⚡</span>
+  <h1 class="logo-txt">Bilim<span>Battle</span></h1>
+  <p class="logo-sub">Оқу — шайқас, білім — қару!</p>
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('login',this)">Кіру</button>
+    <button class="tab" onclick="switchTab('register',this)">Тіркелу</button>
+  </div>
+  <div id="f-login" class="auth-form">
+    <input id="l-user" placeholder="Логин / Никнейм"/>
+    <input id="l-pass" placeholder="Пароль" type="password"/>
+    <button class="btn btn-pri" onclick="doLogin()">⚡ Кіру</button>
+    <p class="err-txt" id="l-err"></p>
+  </div>
+  <div id="f-reg" class="auth-form hidden">
+    <input id="r-name" placeholder="Толық аты-жөні"/>
+    <input id="r-user" placeholder="Никнейм (уникальный)"/>
+    <input id="r-subj" placeholder="Пән"/>
+    <input id="r-pass" placeholder="Пароль" type="password"/>
+    <input id="r-pass2" placeholder="Парольді қайталаңыз" type="password"/>
+    <button class="btn btn-pri" onclick="doRegister()">🚀 Тіркелу</button>
+    <p class="err-txt" id="r-err"></p>
+  </div>
+  <p class="stu-hint">Оқушысыз ба? <a href="#" onclick="go('s-stu')">Кодпен тестке кіру →</a></p>
+</div>
+
+<!-- STUDENT JOIN -->
+<div id="s-stu" class="screen">
+  <button class="btn btn-ghost" style="position:absolute;top:20px;left:20px" onclick="go('s-splash')">← Артқа</button>
+  <div style="font-size:68px;margin-bottom:6px">🎮</div>
+  <h2 style="font-family:var(--fn);font-size:28px">Тестке қосылу</h2>
+  <p style="color:var(--t2)">Мұғалім берген 6 цифрлы кодты теріңіз</p>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:320px">
+    <input id="sj-name" placeholder="Атыңызды жазыңыз" style="text-align:center"/>
+    <input id="sj-code" placeholder="● ● ● ● ● ●" class="big-inp" maxlength="6" oninput="this.value=this.value.replace(/\D/g,'')"/>
+    <button class="btn btn-pri" onclick="studentJoin()">Кіру ⚡</button>
+  </div>
+</div>
+
+<!-- STUDENT QUIZ -->
+<div id="s-stuq" class="screen">
+  <div class="sq-hdr">
+    <div class="sq-prog-wrap"><div id="sq-prog" class="sq-prog" style="width:0%"></div></div>
+    <div class="sq-meta">
+      <span id="sq-qnum" style="font-family:var(--fn);font-size:13px">1/15</span>
+      <span id="sq-title" style="color:var(--t2);font-size:12px"></span>
+      <div class="sq-tmr-wrap">
+        <span id="sq-tnum" class="sq-tmr-num">20</span>
+        <div class="sq-tmr-track"><div id="sq-tb" class="sq-tb"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="sq-body">
+    <div class="qcard sq-qcard"><p id="sq-qtxt">Сұрақ...</p></div>
+    <div id="sq-agrid" class="sq-agrid"></div>
+    <div id="sq-fb" class="sq-fb hidden"></div>
+  </div>
+</div>
+
+<!-- STUDENT RESULT -->
+<div id="s-sres" class="screen">
+  <div id="sr-emo" class="sr-emo">🏆</div>
+  <h2 id="sr-name" style="font-family:var(--fn);font-size:24px"></h2>
+  <div class="sr-grd"><span id="sr-grd">5</span></div>
+  <div class="sr-stats">
+    <div class="sr-stat"><span class="sr-val" id="sr-sc">0</span><span style="font-size:12px;color:var(--t2)">Ұпай</span></div>
+    <div class="sr-stat"><span class="sr-val" id="sr-ok">0/0</span><span style="font-size:12px;color:var(--t2)">Дұрыс</span></div>
+    <div class="sr-stat"><span class="sr-val" id="sr-pct">0%</span><span style="font-size:12px;color:var(--t2)">Пайыз</span></div>
+  </div>
+  <p style="color:var(--t2);font-size:13px">Нәтиже мұғалімге жіберілді ✅</p>
+  <button class="btn btn-out" style="max-width:260px;margin-top:16px" onclick="go('s-splash')">← Басты бетке</button>
+</div>
+
+<!-- SOLO LOBBY -->
+<div id="s-slob" class="screen">
+  <div class="nav"><div class="nav-logo">⚡ Жеке Жарыс</div>
+    <div class="nav-acts"><button class="btn btn-pri sm" onclick="endSoloRoom()">🏁 Аяқтау</button></div>
+  </div>
+  <div class="sl-body">
+    <div class="sl-code-banner">
+      <p style="color:var(--t2);font-size:13px;margin-bottom:8px">Оқушыларға кодты айтыңыз:</p>
+      <div class="sl-bigcode" id="sl-code">------</div>
+      <p style="color:var(--t2);font-size:12px;margin-top:8px">«Кодпен тестке кіру» → код + аты → тест</p>
+    </div>
+    <div class="sl-inforow">
+      <span id="sl-qtitle" style="font-weight:700"></span>
+      <span id="sl-qcnt" style="color:var(--t2)"></span>
+      <span id="sl-pcnt" style="color:var(--ok);font-weight:700">👥 0 оқушы</span>
+    </div>
+    <h3 style="text-align:center;font-family:var(--fn);font-size:14px">🏆 Live Рейтинг</h3>
+    <div id="sl-lb" class="sl-lb"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="s-dash" class="screen">
+  <div class="nav">
+    <div class="nav-logo">⚡ BilimBattle</div>
+    <div id="nav-tname" style="color:var(--t2);font-size:13px"></div>
+    <div class="nav-acts">
+      <button class="btn btn-ghost" onclick="go('s-qlib')">📚 Тесттерім</button>
+      <button class="btn btn-ghost" onclick="openEditor()">✏️ Жаңа тест</button>
+      <button class="btn btn-ghost" onclick="doLogout()">Шығу</button>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="dash-welcome">
+      <h2>Сәлем, <span id="dash-name">Мұғалім</span>! 👋</h2>
+      <p>Бүгін қандай режимде шайқасамыз?</p>
+    </div>
+    <div class="type-row">
+      <div class="type-badge tb-team">🏟️ ТОПТЫҚ — проекторда</div>
+      <div class="type-badge tb-solo">📱 ЖЕКЕ — телефоннан</div>
+    </div>
+    <div class="mode-grid">
+      <div class="mc team-mc" onclick="pickMode('bb')">
+        <span class="mc-icon">🃏</span><h3>BilimBattle</h3><p>Командалық нөмір ойыны</p>
+        <div class="mc-tag team-tag">ТОПТЫҚ</div>
+      </div>
+      <div class="mc team-mc feat" onclick="pickMode('mon')">
+        <span class="mc-icon">👾</span><h3>Monster Raid</h3><p>Барлық топ Boss-қа қарсы!</p>
+        <div class="mc-badge">🔥 HOT</div>
+        <div class="mc-tag team-tag">ТОПТЫҚ</div>
+      </div>
+      <div class="mc solo-mc" onclick="pickMode('solo')">
+        <span class="mc-icon">⚡</span><h3>Жеке Жарыс</h3><p>Оқушы телефонынан кіреді</p>
+        <div class="mc-tag solo-tag">ЖЕКЕ</div>
+      </div>
+      <div class="mc" onclick="openEditor()">
+        <span class="mc-icon">✏️</span><h3>Редактор</h3><p>Жаңа тест / AI</p>
+      </div>
+    </div>
+    <div class="recent">
+      <h3>📂 Соңғы тесттер</h3>
+      <div id="recent-list" class="qmini"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR -->
+<div id="s-ed" class="screen">
+  <div class="nav"><div class="nav-logo">✏️ Редактор</div>
+    <div class="nav-acts">
+      <button class="btn btn-ghost" onclick="go('s-dash')">← Дашборд</button>
+      <button class="btn btn-pri sm" onclick="saveQuiz()">💾 Сақтау</button>
+    </div>
+  </div>
+  <div class="ed-body">
+    <div class="ed-left">
+      <div class="ed-meta">
+        <input id="q-title" placeholder="Тест атауы"/>
+        <input id="q-subj" placeholder="Пән"/>
+        <select id="q-grade">
+          <option value="">Сынып</option>
+          <option>1-сынып</option><option>2-сынып</option><option>3-сынып</option>
+          <option>4-сынып</option><option>5-сынып</option><option>6-сынып</option>
+          <option>7-сынып</option><option>8-сынып</option><option>9-сынып</option>
+          <option>10-сынып</option><option>11-сынып</option><option>Университет</option>
+        </select>
+        <select id="q-lang">
+          <option value="kk">Қазақ тілі</option>
+          <option value="ru">Орыс тілі</option>
+          <option value="en">Ағылшын тілі</option>
+        </select>
+      </div>
+      <div class="box">
+        <h4>🤖 AI Генератор</h4>
+        <textarea id="ai-topic" placeholder="Тақырыпты жазыңыз: «Квадрат түбір, 8-сынып»"></textarea>
+        <div class="ai-opts">
+          <select id="ai-cnt" style="width:110px;padding:9px 12px">
+            <option value="10">10 сұрақ</option>
+            <option value="15" selected>15 сұрақ</option>
+            <option value="20">20 сұрақ</option>
+          </select>
+          <button class="btn-ai" onclick="generateAI()">⚡ Генерация</button>
+        </div>
+        <div id="ai-st" class="ai-status"></div>
+      </div>
+      <div class="box">
+        <h4>📁 Импорт (.txt)</h4>
+        <div class="fmt-hint"><code>Сұрақ мәтіні?<br>A) Жауап 1<br>B) Жауап 2<br>C) Жауап 3<br>D) Жауап 4<br>Дұрыс: A</code></div>
+        <input type="file" id="imp-file" accept=".txt,.csv" class="hidden" onchange="importFile(event)"/>
+        <button class="btn btn-out" onclick="document.getElementById('imp-file').click()">📤 Файл жүктеу</button>
+      </div>
+    </div>
+    <div class="ed-right">
+      <div class="qh">
+        <h4>📝 Сұрақтар <span id="qcnt" class="badge">0</span></h4>
+        <button class="btn-addq" onclick="addQ()">+ Қосу</button>
+      </div>
+      <div id="qlist" class="qlist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ LIBRARY -->
+<div id="s-qlib" class="screen">
+  <div class="nav"><div class="nav-logo">📚 Тесттерім</div>
+    <div class="nav-acts">
+      <button class="btn btn-ghost" onclick="go('s-dash')">← Дашборд</button>
+      <button class="btn btn-pri sm" onclick="openEditor()">+ Жаңа тест</button>
+    </div>
+  </div>
+  <div class="qlib"><div id="qgrid" class="qgrid"></div></div>
+</div>
+
+<!-- SETUP -->
+<div id="s-setup" class="screen">
+  <div class="nav"><div class="nav-logo" id="setup-title">⚙️ Баптау</div>
+    <div class="nav-acts"><button class="btn btn-ghost" onclick="go('s-dash')">← Артқа</button></div>
+  </div>
+  <div class="setup-body">
+    <div class="setup-form">
+      <div>
+        <h3>Тест таңдаңыз</h3>
+        <div id="setup-ql" class="setup-ql"></div>
+      </div>
+      <div id="team-setup">
+        <h3>Командалар</h3>
+        <div class="cnt-row"><span>Топ саны:</span>
+          <div class="cnt-btns">
+            <button class="cnt-btn" onclick="setTC(1)">1</button>
+            <button class="cnt-btn on" onclick="setTC(2)">2</button>
+            <button class="cnt-btn" onclick="setTC(3)">3</button>
+            <button class="cnt-btn" onclick="setTC(4)">4</button>
+          </div>
+        </div>
+        <div id="team-names" class="tnames"></div>
+      </div>
+      <div id="solo-info" class="solo-inf hidden">
+        <span style="font-size:32px">📱</span>
+        <div><strong>Жеке режим</strong>
+          <p style="color:var(--t2);font-size:12px;margin-top:4px">Ойын басталғанда кодты оқушыларға айтасыз. Олар телефоннан тест тапсырады. Сіздің экранда тек рейтинг шығады.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Таймер</h3>
+        <label class="tog-wrap">
+          <input type="checkbox" id="tmr-on" checked onchange="document.getElementById('tmr-opts').style.display=this.checked?'flex':'none';GS.timerOn=this.checked"/>
+          <span class="tog-sl"></span><span>Таймер қосу</span>
+        </label>
+        <div id="tmr-opts" class="timer-opts" style="margin-top:10px">
+          <button class="tbtn on" onclick="setTmr(15,this)">15с</button>
+          <button class="tbtn" onclick="setTmr(20,this)">20с</button>
+          <button class="tbtn" onclick="setTmr(30,this)">30с</button>
+          <button class="tbtn" onclick="setTmr(45,this)">45с</button>
+        </div>
+      </div>
+      <button class="btn btn-pri big" onclick="startGame()">🚀 Ойынды бастау!</button>
+    </div>
+    <div id="setup-qr" class="setup-qr" style="display:none">
+      <h3 style="font-size:14px;font-family:var(--fn);color:var(--t2)">📱 Оқушыларға код</h3>
+      <div class="room-code" id="setup-code">------</div>
+      <p style="color:var(--t2);font-size:12px">Ойын басталғанда кодты айтыңыз</p>
+    </div>
+  </div>
+</div>
+
+<!-- BILIMBATTLE GAME -->
+<div id="s-game-bb" class="screen">
+  <div class="bb-topbar">
+    <div id="bb-chips" class="bb-scores-row"></div>
+    <div id="bb-tmr" class="bb-tmr-badge" style="display:none">20</div>
+  </div>
+  <div class="bb-center">
+    <div id="bb-lbl" class="bb-active-lbl"><span>🦁</span><span>Таңдайды...</span></div>
+    <div id="bb-grid" class="num-grid"></div>
+  </div>
+  <div id="bb-qmodal" class="q-modal hidden"></div>
+  <div id="bb-rpop" class="rpop hidden"></div>
+</div>
+
+<!-- MONSTER RAID -->
+<div id="s-game-mon" class="screen">
+  <div class="mon-hdr">
+    <div id="mon-chips" class="bb-scores-row" style="justify-content:center"></div>
+    <div class="boss-info">
+      <span id="boss-nm" class="boss-nm">🐉 Сан Айдаһары</span>
+      <div class="hp-wrap"><div id="hp-bar" style="width:100%"></div></div>
+      <span id="hp-txt" class="hp-txt">500 / 500 HP</span>
+    </div>
+  </div>
+  <div class="mon-arena">
+    <div class="mon-sprite"><div id="mon-svg"></div></div>
+    <div class="mon-qwrap">
+      <div class="qcard"><p class="qn" id="mon-qn">1/15</p><p id="mon-qtxt">Сұрақ...</p></div>
+      <div id="mon-agrid" class="man-grid"></div>
+      <div class="tb-wrap"><div id="mon-tb" class="tb"></div></div>
+    </div>
+  </div>
+  <div id="mon-rpop" class="rpop hidden"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="s-results" class="screen">
+  <div class="res-wrap">
+    <h1 class="res-title">🏆 Ойын аяқталды!</h1>
+    <div id="podium" class="podium"></div>
+    <div id="scores-tbl" class="scores-tbl"></div>
+    <div class="res-acts">
+      <button class="btn btn-pri" onclick="go('s-dash')">🏠 Басты бет</button>
+      <button class="btn btn-out" onclick="restartGame()">🔄 Қайта ойнау</button>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+</div>
+
+<!-- ADMIN -->
+<div id="s-admin" class="screen">
+  <div class="nav" style="border-bottom-color:var(--acc)"><div class="nav-logo">🛡️ Admin</div>
+    <div class="nav-acts"><button class="btn btn-ghost" onclick="doLogout()">Шығу</button></div>
+  </div>
+  <div class="adm-body"><h2>👩‍🏫 Мұғалімдер</h2><div id="adm-list" class="adm-tbl-wrap"></div></div>
+</div>
+
+<div id="toast">Хабарлама</div>
+
+<script>
+/* =========================================================
+   DATA LAYER
+   ========================================================= */
+const DB = {
+  get(k){try{return JSON.parse(localStorage.getItem(k))||null}catch{return null}},
+  set(k,v){localStorage.setItem(k,JSON.stringify(v))},
+  users(){return this.get('bb_u')||[]},
+  saveUsers(u){this.set('bb_u',u)},
+  findUser(l){return this.users().find(u=>u.login.toLowerCase()===l.toLowerCase())||null},
+  addUser(u){const a=this.users();a.push(u);this.saveUsers(a)},
+  updUser(l,p){this.saveUsers(this.users().map(u=>u.login.toLowerCase()===l.toLowerCase()?{...u,...p}:u))},
+  delUser(l){this.saveUsers(this.users().filter(u=>u.login.toLowerCase()!==l.toLowerCase()))},
+  quizzes(){return this.get('bb_q')||[]},
+  saveQ(q){this.set('bb_q',q)},
+  myQ(l){return this.quizzes().filter(q=>q.owner===l)},
+  getQ(id){return this.quizzes().find(q=>q.id===id)||null},
+  addQ(q){const a=this.quizzes();a.push(q);this.saveQ(a)},
+  updQ(id,p){this.saveQ(this.quizzes().map(q=>q.id===id?{...q,...p}:q))},
+  delQ(id){this.saveQ(this.quizzes().filter(q=>q.id!==id))},
+  session(){return this.get('bb_s')},
+  setS(u){this.set('bb_s',u)},
+  clrS(){localStorage.removeItem('bb_s')},
+  soloKey(c){return'bb_solo_'+c},
+};
+// Seed admin
+if(!DB.findUser('ERS')) DB.addUser({login:'ERS',password:'0525',role:'admin',name:'Admin',subject:'',createdAt:new Date().toISOString()});
+
+const ANIMALS=['🦁','🐯','🦊','🐺'];
+const TCOLORS=['#e53935','#1565c0','#2e7d32','#f57f17'];
+const TNAMES=['🦁 Арыстан','🐯 Жолбарыс','🦊 Түлкі','🐺 Қасқыр'];
+const TGRADS=['linear-gradient(135deg,#e53935,#b71c1c)','linear-gradient(135deg,#1565c0,#0d47a1)','linear-gradient(135deg,#2e7d32,#1b5e20)','linear-gradient(135deg,#f57f17,#e65100)'];
+const NC_COLORS=['#6c5ce7','#00b4d8','#2d6a4f','#e9c46a','#e76f51','#7b2d8b','#0077b6','#d62828','#3a86ff','#8338ec'];
+
+const M_CORRECT=[
+  {e:'🧠',t:'GENIUS MODE!',d:'Миы бар адам екен!'},
+  {e:'🚀',t:'TO THE MOON!',d:'Эйнштейн мақтан тұтар!'},
+  {e:'🔥',t:'ON FIRE!',d:'Тоқтата алмайсың!'},
+  {e:'💎',t:'DIAMOND MIND!',d:'Энциклопедия ме?!'},
+  {e:'👑',t:'KING!',d:'Таққа лайық!'},
+  {e:'⚡',t:'LIGHTNING!',d:'Секундта жауап берді!'},
+];
+const M_WRONG=[
+  {e:'🤡',t:'CLOWN ALERT!',d:'Цирк дарынды табылды...'},
+  {e:'😭',t:'ЖЫЛАМА!',d:'Ата-анаңа не дейсің?'},
+  {e:'🙈',t:'Сабаққа бармаған-ба?',d:'Кітаппен дос бол!'},
+  {e:'😴',t:'ZZZZ...',d:'Сабақта ұйықтап па ед?'},
+  {e:'💀',t:'RIP Ұпай',d:'Командаңа кешір...'},
+  {e:'🫠',t:'MELTING...',d:'Білімсіздіктен ба?'},
+];
+const M_TIME=[
+  {e:'⌛',t:'Уақыт аяусыз...',d:'Тым баяу ойлайсың!'},
+  {e:'🐢',t:'ТАСБАҚА MODE',d:'Жылдамырақ бол!'},
+];
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function genCode(){return Math.floor(100000+Math.random()*900000).toString()}
+
+/* =========================================================
+   SOUND (Web Audio API)
+   ========================================================= */
+const SFX=(()=>{
+  let ctx=null;
+  function gc(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx}
+  function tone(f,t,d,v=.3){try{const c=gc(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.value=f;g.gain.value=v;g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.start();o.stop(c.currentTime+d)}catch{}}
+  function notes(ns){ns.forEach(n=>setTimeout(()=>tone(n.f,n.t||'sine',n.d||.15,n.v||.3),(n.delay||0)*1000))}
+  return{
+    correct(){notes([{f:523,delay:0},{f:659,delay:.08},{f:784,delay:.16},{f:1047,d:.25,v:.35,delay:.24}])},
+    wrong(){notes([{f:400,t:'sawtooth',v:.2,delay:0},{f:280,t:'sawtooth',v:.2,delay:.14}])},
+    bonus(){notes([{f:880,delay:0},{f:1319,delay:.08},{f:1760,d:.2,v:.4,delay:.16},{f:2093,d:.3,v:.35,delay:.27}])},
+    click(){tone(800,'sine',.06,.15)},
+    cardFlip(){tone(600,'sine',.08,.12)},
+    timerTick(){tone(1000,'square',.05,.08)},
+    timerEnd(){notes([{f:880,t:'square',v:.25,delay:0},{f:440,t:'square',v:.25,delay:.12},{f:880,t:'square',v:.25,delay:.24}])},
+    critical(){notes([{f:150,t:'sawtooth',v:.4,delay:0},{f:600,t:'triangle',d:.3,v:.5,delay:.06}])},
+    monsterDead(){notes([{f:880,t:'sawtooth',v:.4,delay:0},{f:2637,d:.3,v:.5,delay:.14}])},
+    gameStart(){notes([{f:440,delay:0},{f:554,delay:.1},{f:659,delay:.2},{f:880,d:.3,v:.4,delay:.3}])},
+    victory(){notes([{f:523,delay:0},{f:659,delay:.1},{f:784,delay:.2},{f:1047,d:.15,v:.4,delay:.3},{f:1047,d:.3,v:.45,delay:.6}])},
+    streak(){notes([{f:660,delay:0},{f:880,delay:.06},{f:1320,d:.15,v:.4,delay:.12}])},
+  };
+})();
+
+/* =========================================================
+   UI HELPERS
+   ========================================================= */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('on');s.style.display='none'});
+  const t=document.getElementById(id);
+  if(t){t.style.display='block';requestAnimationFrame(()=>t.classList.add('on'))}
+  if(id==='s-dash'){loadRecent()}
+  if(id==='s-qlib'){loadQLib()}
+}
+
+let _toast=null;
+function toast(msg,type='info'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+type;
+  clearTimeout(_toast);_toast=setTimeout(()=>el.className='',2800);
+}
+
+function esc(s=''){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+/* Particle BG */
+(()=>{
+  const c=document.getElementById('bg'),ctx=c.getContext('2d');
+  const resize=()=>{c.width=innerWidth;c.height=innerHeight};resize();addEventListener('resize',resize);
+  const ps=Array.from({length:55},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4+.4,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,a:Math.random()*.35+.08}));
+  function draw(){ctx.clearRect(0,0,c.width,c.height);ps.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(140,155,255,${p.a})`;ctx.fill();p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0});requestAnimationFrame(draw)}
+  draw();
+})();
+
+function confetti(){
+  const c=document.getElementById('confetti'),ctx=c.getContext('2d');
+  c.width=innerWidth;c.height=innerHeight;
+  const ps=Array.from({length:120},()=>({x:Math.random()*c.width,y:Math.random()*-200,r:Math.random()*7+3,color:['#ffd700','#ff4d8b','#5b6ef5','#00e676','#ff6d00'][Math.floor(Math.random()*5)],vx:(Math.random()-.5)*3,vy:Math.random()*3+2,rot:Math.random()*360,vrot:(Math.random()-.5)*6}));
+  let f=0;function draw(){ctx.clearRect(0,0,c.width,c.height);ps.forEach(p=>{ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.color;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.5);ctx.restore();p.x+=p.vx;p.y+=p.vy;p.rot+=p.vrot;if(p.y>c.height){p.y=-20;p.x=Math.random()*c.width}});if(++f<300)requestAnimationFrame(draw);else ctx.clearRect(0,0,c.width,c.height)}
+  draw();
+}
+
+function particles(){
+  for(let i=0;i<12;i++){const e=document.createElement('div');e.style.cssText=`position:fixed;pointer-events:none;z-index:999;left:${38+Math.random()*24}%;top:${38+Math.random()*24}%;font-size:${18+Math.random()*20}px;--tx:${(Math.random()-.5)*200}px;--ty:${-50-Math.random()*150}px;animation:particle .8s ease forwards`;e.textContent=['⭐','✨','💥','🎉','🔥'][Math.floor(Math.random()*5)];document.body.appendChild(e);setTimeout(()=>e.remove(),900)}
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+let CU=null; // current user
+
+function switchTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('f-login').classList.toggle('hidden',t!=='login');
+  document.getElementById('f-reg').classList.toggle('hidden',t!=='register');
+  document.getElementById('l-err').textContent='';
+  document.getElementById('r-err').textContent='';
+}
+
+function doLogin(){
+  const l=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const e=document.getElementById('l-err');
+  if(!l||!p){e.textContent='⚠️ Барлық өрістерді толтырыңыз';return}
+  const u=DB.findUser(l);
+  if(!u||u.password!==p){e.textContent='❌ Логин немесе пароль қате';return}
+  CU=u;DB.setS(u);afterLogin(u);
+}
+
+function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const login=document.getElementById('r-user').value.trim();
+  const subj=document.getElementById('r-subj').value.trim();
+  const p=document.getElementById('r-pass').value;
+  const p2=document.getElementById('r-pass2').value;
+  const e=document.getElementById('r-err');
+  if(!name||!login||!p||!p2){e.textContent='⚠️ Барлық өрістерді толтырыңыз';return}
+  if(p!==p2){e.textContent='❌ Парольдар сәйкес емес';return}
+  if(p.length<4){e.textContent='❌ Пароль кем дегенде 4 таңба';return}
+  if(login.toLowerCase()==='ers'){e.textContent='❌ Бұл логин тыйым салынған';return}
+  if(DB.findUser(login)){e.textContent='❌ Бұл никнейм бос емес';return}
+  const u={login,name,subject:subj,password:p,role:'teacher',createdAt:new Date().toISOString()};
+  DB.addUser(u);CU=u;DB.setS(u);
+  toast('✅ Тіркелу сәтті!','ok');afterLogin(u);
+}
+
+function doLogout(){CU=null;DB.clrS();go('s-splash')}
+
+function afterLogin(u){
+  if(u.role==='admin'){loadAdmin();go('s-admin')}
+  else{
+    document.getElementById('nav-tname').textContent=u.name;
+    document.getElementById('dash-name').textContent=u.name.split(' ')[0];
+    go('s-dash');
+  }
+}
+
+function restoreSession(){
+  const s=DB.session();
+  if(s){const f=DB.findUser(s.login);if(f){CU=f;afterLogin(f)}}
+}
+
+/* Admin */
+function loadAdmin(){
+  const ts=DB.users().filter(u=>u.role!=='admin');
+  const w=document.getElementById('adm-list');
+  if(!ts.length){w.innerHTML='<p style="padding:20px;color:var(--t2)">Мұғалімдер жоқ</p>';return}
+  w.innerHTML=`<table class="adm-tbl"><thead><tr><th>#</th><th>Никнейм</th><th>Аты</th><th>Пән</th><th>Тіркелген</th><th>Тесттер</th><th>Әрекет</th></tr></thead><tbody>
+  ${ts.map((t,i)=>`<tr><td>${i+1}</td><td><strong>${esc(t.login)}</strong></td><td>${esc(t.name)}</td><td>${esc(t.subject||'—')}</td><td>${new Date(t.createdAt).toLocaleDateString('kk-KZ')}</td><td>${DB.myQ(t.login).length}</td><td><button class="breset" onclick="adminReset('${t.login}')">🔑 Пароль</button><button class="bdel" onclick="adminDel('${t.login}')">🗑️</button></td></tr>`).join('')}
+  </tbody></table>`;
+}
+function adminReset(l){const p=prompt(`"${l}" жаңа пароль:`);if(!p)return;DB.updUser(l,{password:p});toast(`✅ ${l} парольі өзгертілді`,'ok')}
+function adminDel(l){if(!confirm(`"${l}" өшіру?`))return;DB.delUser(l);DB.myQ(l).forEach(q=>DB.delQ(q.id));loadAdmin();toast(`🗑️ ${l} өшірілді`,'info')}
+
+/* =========================================================
+   EDITOR
+   ========================================================= */
+let EQ=null,EQQ=[];
+
+function openEditor(id=null){
+  EQ=id;EQQ=[];
+  if(id){const q=DB.getQ(id);if(q){document.getElementById('q-title').value=q.title||'';document.getElementById('q-subj').value=q.subject||'';document.getElementById('q-grade').value=q.grade||'';document.getElementById('q-lang').value=q.lang||'kk';EQQ=JSON.parse(JSON.stringify(q.questions||[]))}}
+  else{document.getElementById('q-title').value='';document.getElementById('q-subj').value=CU?.subject||'';document.getElementById('q-grade').value='';document.getElementById('q-lang').value='kk'}
+  renderQList();go('s-ed');
+}
+
+function addQ(data=null){
+  EQQ.push(data||{id:genId(),text:'',answers:['','','',''],correct:0});
+  renderQList();
+  setTimeout(()=>document.getElementById('qlist').lastElementChild?.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
+function delQ(id){EQQ=EQQ.filter(q=>q.id!==id);renderQList()}
+
+function setCorrect(id,ai){
+  const q=EQQ.find(q=>q.id===id);if(!q)return;q.correct=ai;
+  document.querySelectorAll(`#qi-${id} .al`).forEach((el,i)=>el.classList.toggle('cor',i===ai));
+}
+
+function renderQList(){
+  document.getElementById('qcnt').textContent=EQQ.length;
+  const l=document.getElementById('qlist');
+  if(!EQQ.length){l.innerHTML='<p style="color:var(--t2);text-align:center;padding:30px">Сұрақтар жоқ. «+ Қосу» батырмасын басыңыз немесе AI пайдаланыңыз.</p>';return}
+  l.innerHTML=EQQ.map((q,idx)=>`
+  <div class="qi" id="qi-${q.id}">
+    <div class="qi-hdr">
+      <span class="qi-num">${idx+1}.</span>
+      <input class="qi-txt" placeholder="Сұрақ мәтіні..." value="${esc(q.text)}" onchange="EQQ[${idx}].text=this.value"/>
+      <button class="btn-delq" onclick="delQ('${q.id}')">✕</button>
+    </div>
+    <div class="ans-grid">
+      ${['A','B','C','D'].map((lt,ai)=>`<div class="ai-item">
+        <div class="al ${lt} ${q.correct===ai?'cor':''}" onclick="setCorrect('${q.id}',${ai})" title="Дұрыс">${lt}</div>
+        <input class="ai-inp" placeholder="${lt}..." value="${esc(q.answers[ai]||'')}" onchange="EQQ[${idx}].answers[${ai}]=this.value"/>
+      </div>`).join('')}
+    </div>
+    <p class="qi-hint">✅ Дұрыс жауаптың әріпіне басыңыз</p>
+  </div>`).join('');
+}
+
+function saveQuiz(){
+  const title=document.getElementById('q-title').value.trim();
+  const subj=document.getElementById('q-subj').value.trim();
+  const grade=document.getElementById('q-grade').value;
+  const lang=document.getElementById('q-lang').value;
+  if(!title){toast('⚠️ Тест атауын жазыңыз','err');return}
+  if(EQQ.length<2){toast('⚠️ Кем дегенде 2 сұрақ','err');return}
+  for(const q of EQQ){
+    if(!q.text.trim()){toast('⚠️ Барлық сұрақ мәтінін толтырыңыз','err');return}
+    if(q.answers.some(a=>!a.trim())){toast('⚠️ Барлық жауаптарды толтырыңыз','err');return}
+  }
+  const quiz={id:EQ||genId(),title,subject:subj,grade,lang,owner:CU.login,questions:EQQ,
+    createdAt:EQ?(DB.getQ(EQ)?.createdAt||new Date().toISOString()):new Date().toISOString(),
+    updatedAt:new Date().toISOString()};
+  if(EQ) DB.updQ(EQ,quiz); else{DB.addQ(quiz);EQ=quiz.id}
+  toast('✅ Тест сақталды!','ok');SFX.correct();loadRecent();
+}
+
+function loadRecent(){
+  const qs=DB.myQ(CU?.login||'').sort((a,b)=>b.updatedAt>a.updatedAt?1:-1).slice(0,5);
+  const l=document.getElementById('recent-list');
+  if(!qs.length){l.innerHTML='<p style="color:var(--t2);font-size:13px">Тесттер жоқ.</p>';return}
+  l.innerHTML=qs.map(q=>`<div class="qm-item">
+    <div><div class="qm-title">${esc(q.title)}</div><div class="qm-meta">${esc(q.subject||'—')} · ${q.questions.length} сұрақ</div></div>
+    <div class="qm-acts">
+      <button class="bsm" onclick="pickMode('bb','${q.id}')">▶ BB</button>
+      <button class="bsm" onclick="pickMode('mon','${q.id}')">👾</button>
+      <button class="bsm" onclick="openEditor('${q.id}')">✏️</button>
+    </div>
+  </div>`).join('');
+}
+
+function loadQLib(){
+  const qs=DB.myQ(CU?.login||'').sort((a,b)=>b.updatedAt>a.updatedAt?1:-1);
+  const g=document.getElementById('qgrid');
+  if(!qs.length){g.innerHTML='<div style="padding:60px;text-align:center;color:var(--t2)"><div style="font-size:60px;margin-bottom:14px">📭</div><p>Тесттер жоқ</p></div>';return}
+  g.innerHTML=qs.map(q=>`<div class="qcard">
+    <div class="qcard-title">${esc(q.title)}</div>
+    <div class="qcard-meta"><span>📚 ${esc(q.subject||'—')}</span><span>🎓 ${esc(q.grade||'—')}</span><span>❓ ${q.questions.length}</span></div>
+    <div class="qcard-acts">
+      <button class="bsm" onclick="pickMode('bb','${q.id}')">🃏 BB</button>
+      <button class="bsm" onclick="pickMode('mon','${q.id}')">👾 Monster</button>
+      <button class="bsm" onclick="pickMode('solo','${q.id}')">⚡ Solo</button>
+      <button class="bsm" onclick="openEditor('${q.id}')">✏️</button>
+      <button class="bsm d" onclick="delQlib('${q.id}')">🗑️</button>
+    </div>
+  </div>`).join('');
+}
+function delQlib(id){if(!confirm('Тестті өшіру?'))return;DB.delQ(id);loadQLib();toast('🗑️ Өшірілді','info')}
+
+/* =========================================================
+   AI GENERATOR
+   ========================================================= */
+async function generateAI(){
+  const topic=document.getElementById('ai-topic').value.trim();
+  const cnt=parseInt(document.getElementById('ai-cnt').value)||15;
+  const lang=document.getElementById('q-lang').value;
+  const st=document.getElementById('ai-st');
+  const btn=document.querySelector('.btn-ai');
+  if(!topic){toast('⚠️ Тақырыпты жазыңыз','err');return}
+  const ll={kk:'қазақ тілінде',ru:'на русском',en:'in English'}[lang]||'қазақ тілінде';
+  st.innerHTML='<span class="spinner"></span> <span style="color:var(--t2)">AI жасап жатыр...</span>';
+  btn.disabled=true;
+  const prompt=`Мұғалімге тест жасаушы AI-сың.\nТақырып: "${topic}"\n${cnt} сұрақ жаса ${ll}.\nТЕК JSON массив қайтар, артық мәтін жоқ:\n[{"text":"Сұрақ?","answers":["A","B","C","D"],"correct":0}]\ncorrect=0 яғни A дұрыс.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok)throw new Error('API '+r.status);
+    const d=await r.json();
+    const raw=d.content?.find(b=>b.type==='text')?.text||'';
+    const m=raw.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if(!m)throw new Error('JSON табылмады');
+    const qs=JSON.parse(m[0]);
+    if(!Array.isArray(qs)||!qs.length)throw new Error('Бос');
+    qs.forEach(q=>{if(!q.text)return;addQ({id:genId(),text:String(q.text).trim(),answers:(Array.isArray(q.answers)?q.answers:['']).concat(['','','']).slice(0,4).map(a=>String(a||'')),correct:typeof q.correct==='number'?Math.min(3,Math.max(0,q.correct)):0})});
+    const ti=document.getElementById('q-title');if(!ti.value)ti.value=topic;
+    st.innerHTML=`<span style="color:var(--ok)">✅ ${qs.length} сұрақ генерацияланды!</span>`;
+    toast(`🤖 ${qs.length} сұрақ дайын!`,'ok');SFX.correct();
+  }catch(e){st.innerHTML=`<span style="color:var(--err)">❌ ${e.message}</span>`;toast('❌ AI қате — тест офлайн немесе API қажет','err')}
+  finally{btn.disabled=false}
+}
+
+function importFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const lines=ev.target.result.split('\n').map(l=>l.trim()).filter(Boolean);
+    let i=0,cnt=0;
+    while(i<lines.length){
+      const qline=lines[i];
+      if(/^[ABCD]\)/i.test(qline)||/^Дұрыс:/i.test(qline)){i++;continue}
+      const ans=[];let ci=0,j=i+1;
+      while(j<lines.length&&ans.length<4){const m=lines[j].match(/^([ABCD])\)\s*(.+)/i);if(m){ans.push(m[2].trim());j++}else break}
+      if(j<lines.length){const cm=lines[j].match(/^Дұрыс\s*:\s*([ABCD])/i);if(cm){ci='ABCD'.indexOf(cm[1].toUpperCase());j++}}
+      if(ans.length===4){addQ({id:genId(),text:qline.replace(/^\d+[\.\)]\s*/,''),answers:ans,correct:ci});cnt++}
+      i=j;
+    }
+    if(cnt)toast(`✅ ${cnt} сұрақ жүктелді!`,'ok'); else toast('⚠️ Форматты тексеріңіз','err');
+  };
+  r.readAsText(f,'UTF-8');e.target.value='';
+}
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const GS={
+  mode:null,quiz:null,teams:[],timerOn:true,timerSecs:20,
+  roomCode:null,cq:0,at:0,timerI:null,tLeft:0,shuffled:[],
+};
+
+/* =========================================================
+   SETUP SCREEN
+   ========================================================= */
+function pickMode(mode,qid=null){
+  GS.mode=mode;
+  const titles={bb:'🃏 BilimBattle',mon:'👾 Monster Raid',solo:'⚡ Жеке Жарыс'};
+  document.getElementById('setup-title').textContent=titles[mode]||'⚙️ Баптау';
+  const isTeam=(mode==='bb'||mode==='mon');
+  const isSolo=(mode==='solo');
+  const qs=DB.myQ(CU.login);
+  const sl=document.getElementById('setup-ql');
+  if(!qs.length)sl.innerHTML='<p style="color:var(--t2);font-size:13px">Тест жоқ</p>';
+  else sl.innerHTML=qs.map(q=>`<div class="sqi ${qid===q.id?'sel':''}" id="ssq-${q.id}" onclick="selQ('${q.id}')"><span>${esc(q.title)}</span><span style="font-size:11px;color:var(--t2)">${q.questions.length}с</span></div>`).join('');
+  if(qid)selQ(qid);
+  document.getElementById('team-setup').style.display=isTeam?'':'none';
+  document.getElementById('solo-info').className=isSolo?'solo-inf':'solo-inf hidden';
+  document.getElementById('setup-qr').style.display=isSolo?'flex':'none';
+  if(isTeam)setTC(GS.teams.length||2);
+  if(isSolo){GS.roomCode=genCode();document.getElementById('setup-code').textContent=GS.roomCode}
+  SFX.click();go('s-setup');
+}
+
+function selQ(id){
+  document.querySelectorAll('.sqi').forEach(e=>e.classList.remove('sel'));
+  document.getElementById('ssq-'+id)?.classList.add('sel');
+  GS.quiz=DB.getQ(id);
+}
+
+function setTC(n){
+  GS.teams=Array.from({length:n},(_,i)=>({name:TNAMES[i],color:TCOLORS[i],animal:ANIMALS[i],grad:TGRADS[i],score:0,streak:0,dbl:false}));
+  document.querySelectorAll('.cnt-btn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===n));
+  const w=document.getElementById('team-names');
+  w.innerHTML=GS.teams.map((t,i)=>`<div class="tnrow"><div class="tdot" style="background:${t.color}">${t.animal}</div><input value="${esc(t.name)}" class="" style="flex:1;background:var(--card);border:1.5px solid rgba(91,110,245,.3);border-radius:12px;color:var(--t);font-family:var(--fb);font-size:14px;padding:9px 12px;outline:none" oninput="GS.teams[${i}].name=this.value"/></div>`).join('');
+}
+
+function setTmr(s,btn){
+  GS.timerSecs=s;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+/* =========================================================
+   START GAME
+   ========================================================= */
+function startGame(){
+  if(!GS.quiz){toast('⚠️ Тест таңдаңыз','err');return}
+  if(GS.quiz.questions.length<2){toast('⚠️ Тест бос','err');return}
+  GS.teams.forEach(t=>{t.score=0;t.streak=0;t.dbl=false});
+  GS.cq=0;GS.at=0;
+  GS.shuffled=GS.quiz.questions.map(q=>({...q,_done:false})).sort(()=>Math.random()-.5);
+  SFX.gameStart();
+  if(GS.mode==='mon') startMonster();
+  else if(GS.mode==='solo') startSoloLobby();
+  else startBB();
+}
+
+/* =========================================================
+   BILIMBATTLE — NUMBERED GRID
+   ========================================================= */
+function startBB(){
+  go('s-game-bb');
+  renderChips('bb-chips',GS.at);
+  renderNumGrid();
+  updateActiveLbl();
+}
+
+function renderChips(containerId,activeIdx){
+  const wrap=document.getElementById(containerId);
+  wrap.innerHTML=GS.teams.map((t,i)=>`<div class="bb-chip ${i===activeIdx?'on':''}" style="border-color:${i===activeIdx?t.color:'transparent'}">
+    <span class="chip-ani">${t.animal}</span>
+    <div><div class="chip-name">${esc(t.name)}</div><div class="chip-pts">${t.score}</div></div>
+    ${t.streak>=3?`<span class="stk">🔥${t.streak}</span>`:''}
+  </div>`).join('');
+}
+
+function updateActiveLbl(){
+  const t=GS.teams[GS.at];
+  const l=document.getElementById('bb-lbl');
+  l.innerHTML=`<span>${t.animal}</span><span>${esc(t.name)} — таңдайды</span>`;
+  l.style.borderColor=t.color+'66';
+}
+
+function renderNumGrid(){
+  const g=document.getElementById('bb-grid');
+  const tmr=document.getElementById('bb-tmr');
+  if(tmr)tmr.style.display='none';
+  g.innerHTML=GS.shuffled.map((q,i)=>{
+    const c=NC_COLORS[i%NC_COLORS.length];
+    return `<div class="nc ${q._done?'used':''}" id="nc-${i}"
+      style="background:${q._done?'rgba(255,255,255,.04)':c};cursor:${q._done?'default':'pointer'}"
+      onclick="${q._done?'':('pickNC('+i+')')}">
+      <span class="nc-num" style="opacity:${q._done?.25:1}">${q._done?'✓':(i+1)}</span>
+    </div>`;
+  }).join('');
+}
+
+function pickNC(idx){
+  const q=GS.shuffled[idx];if(q._done)return;
+  SFX.cardFlip();
+  GS.cq=idx;
+  openQModal(q,idx);
+}
+
+function openQModal(q,idx){
+  const modal=document.getElementById('bb-qmodal');
+  const letters=['A','B','C','D'];
+  modal.innerHTML=`<div class="qm-inner">
+    <div class="qm-hdr">
+      <span style="font-family:var(--fn);font-size:12px;color:var(--t2)">Сұрақ ${idx+1}</span>
+      <div id="qm-tmr" class="qm-tmr" style="display:${GS.timerOn?'flex':'none'}">${GS.timerSecs}</div>
+    </div>
+    <p class="qm-q">${esc(q.text)}</p>
+    <div class="qm-ans">
+      ${q.answers.map((a,i)=>`<button class="qm-btn c${i}" onclick="answerBB(${idx},${i})" id="qmb-${i}">
+        <span class="qm-ltr">${letters[i]}</span>${esc(a)}
+      </button>`).join('')}
+    </div>
+  </div>`;
+  modal.classList.remove('hidden');
+  if(GS.timerOn)startBBTimer();
+}
+
+function answerBB(qidx,ai){
+  stopTmr();
+  const q=GS.shuffled[qidx];
+  const ok=ai===q.correct;
+  const team=GS.teams[GS.at];
+  document.querySelectorAll('.qm-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('cor');else if(i===ai&&!ok)b.classList.add('wrg')});
+  q._done=true;
+  if(ok){
+    let pts=calcPts();
+    if(team.dbl){pts*=2;team.dbl=false}
+    team.score+=pts;team.streak++;
+    if(team.streak>=3)SFX.streak();else SFX.correct();
+    const m=rnd(M_CORRECT);
+    setTimeout(()=>showBBPop(m,true,`+${pts} ұпай`,qidx),600);
+    particles();
+  }else{
+    team.streak=0;team.dbl=false;SFX.wrong();
+    const m=rnd(M_WRONG);
+    setTimeout(()=>showBBPop(m,false,`Дұрыс: ${String.fromCharCode(65+q.correct)}) ${q.answers[q.correct]}`,qidx),600);
+  }
+}
+
+function showBBPop(m,ok,sub,qidx){
+  document.getElementById('bb-qmodal').classList.add('hidden');
+  const p=document.getElementById('bb-rpop');
+  p.className='rpop';
+  p.innerHTML=`<div class="ri ${ok?'ok':'ng'}">
+    <span class="r-emo">${m.e}</span>
+    <h2>${m.t}</h2><p>${m.d}</p>
+    <p style="font-size:12px;margin-top:-10px">${sub}</p>
+    <button class="btn btn-pri" style="margin-top:14px" onclick="advBB(${qidx})">Жалғастыру →</button>
+  </div>`;
+}
+
+function advBB(qidx){
+  document.getElementById('bb-rpop').className='rpop hidden';
+  const nc=document.getElementById(`nc-${qidx}`);
+  if(nc){nc.className='nc used';nc.style.background='rgba(255,255,255,.04)';nc.style.cursor='default';nc.innerHTML='<span class="nc-num" style="opacity:.25">✓</span>'}
+  if(GS.shuffled.every(q=>q._done)){endGame();return}
+  GS.at=(GS.at+1)%GS.teams.length;
+  renderChips('bb-chips',GS.at);
+  updateActiveLbl();
+}
+
+function startBBTimer(){
+  GS.tLeft=GS.timerSecs;
+  const td=document.getElementById('bb-tmr');
+  if(td){td.style.display='flex';td.textContent=GS.tLeft;td.className='bb-tmr-badge'}
+  const tm=document.getElementById('qm-tmr');
+  if(tm){tm.textContent=GS.tLeft;tm.className='qm-tmr'}
+  clearInterval(GS.timerI);
+  let lt=6;
+  GS.timerI=setInterval(()=>{
+    GS.tLeft--;
+    const td2=document.getElementById('bb-tmr'),tm2=document.getElementById('qm-tmr');
+    if(td2)td2.textContent=GS.tLeft;if(tm2)tm2.textContent=GS.tLeft;
+    if(GS.tLeft<=5){if(td2)td2.className='bb-tmr-badge dng';if(tm2)tm2.className='qm-tmr dng'}
+    if(GS.tLeft<=5&&GS.tLeft!==lt){SFX.timerTick();lt=GS.tLeft}
+    if(GS.tLeft<=0){clearInterval(GS.timerI);bbTimerEnd()}
+  },1000);
+}
+function stopTmr(){clearInterval(GS.timerI)}
+function bbTimerEnd(){
+  SFX.timerEnd();
+  const q=GS.shuffled[GS.cq];if(q)q._done=true;
+  GS.teams[GS.at].streak=0;
+  showBBPop(rnd(M_TIME),false,'Уақыт бітті!',GS.cq);
+}
+function calcPts(){return 100+(GS.timerOn?Math.floor(GS.tLeft*3):0)+(GS.teams[GS.at].streak>=3?50:0)}
+
+/* =========================================================
+   MONSTER RAID
+   ========================================================= */
+const MS={hp:500,maxHp:500,cq:0,at:0,ans:false,tmrI:null,tLeft:0};
+
+const MON_SVGS={
+  dragon:(c)=>`<svg width="260" height="280" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg"><ellipse cx="100" cy="150" rx="55" ry="45" fill="${c}"/><circle cx="100" cy="85" r="44" fill="${c}"/><polygon points="68,48 56,10 82,40" fill="${c}"/><polygon points="132,48 144,10 118,40" fill="${c}"/><ellipse cx="82" cy="75" rx="14" ry="17" fill="#fff"/><ellipse cx="118" cy="75" rx="14" ry="17" fill="#fff"/><circle cx="82" cy="75" r="7" fill="#1a1a2e"/><circle cx="118" cy="75" r="7" fill="#1a1a2e"/><circle cx="84" cy="73" r="2.5" fill="#fff"/><circle cx="120" cy="73" r="2.5" fill="#fff"/><path d="M83,102 Q100,116 117,102" stroke="#1a1a2e" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="91" y="104" width="7" height="10" rx="3" fill="#ff1744"/><rect x="102" y="104" width="7" height="10" rx="3" fill="#ff1744"/><path d="M48,135 Q22,115 28,168 Q50,155 62,143" fill="${c}" opacity=".85"/><path d="M152,135 Q178,115 172,168 Q150,155 138,143" fill="${c}" opacity=".85"/></svg>`,
+  skull:(c)=>`<svg width="260" height="280" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg"><ellipse cx="100" cy="92" rx="68" ry="72" fill="${c}"/><rect x="58" y="152" width="84" height="32" rx="8" fill="${c}"/><rect x="63" y="157" width="18" height="24" rx="4" fill="#111"/><rect x="89" y="157" width="18" height="24" rx="4" fill="#111"/><rect x="115" y="157" width="18" height="24" rx="4" fill="#111"/><ellipse cx="75" cy="82" rx="24" ry="28" fill="#0a0a1a"/><ellipse cx="125" cy="82" rx="24" ry="28" fill="#0a0a1a"/><circle cx="75" cy="82" r="10" fill="${c}" opacity=".6"/><circle cx="125" cy="82" r="10" fill="${c}" opacity=".6"/></svg>`,
+  virus:(c)=>{const sp=[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180,x1=(100+Math.cos(r)*55).toFixed(1),y1=(110+Math.sin(r)*55).toFixed(1),x2=(100+Math.cos(r)*88).toFixed(1),y2=(110+Math.sin(r)*88).toFixed(1);return`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="7" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="9" fill="${c}"/>`}).join('');return`<svg width="260" height="280" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg"><circle cx="100" cy="110" r="58" fill="${c}"/>${sp}<circle cx="83" cy="100" r="15" fill="#fff"/><circle cx="117" cy="100" r="15" fill="#fff"/><circle cx="83" cy="100" r="8" fill="#111"/><circle cx="117" cy="100" r="8" fill="#111"/><path d="M83,122 Q100,135 117,122" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`},
+  king:(c)=>`<svg width="260" height="280" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg"><polygon points="30,65 50,30 70,55 100,20 130,55 150,30 170,65" fill="#ffd700"/><circle cx="50" cy="30" r="8" fill="#e040fb"/><circle cx="100" cy="20" r="10" fill="#f44336"/><circle cx="150" cy="30" r="8" fill="#2196f3"/><ellipse cx="100" cy="120" rx="62" ry="68" fill="${c}"/><ellipse cx="78" cy="108" rx="15" ry="18" fill="#fff"/><ellipse cx="122" cy="108" rx="15" ry="18" fill="#fff"/><circle cx="78" cy="108" r="8" fill="#111"/><circle cx="122" cy="108" r="8" fill="#111"/><path d="M78,140 Q100,155 122,140" stroke="#111" stroke-width="3" fill="none"/></svg>`,
+};
+const MONS={math:{name:'🐉 Сан Айдаһары',hp:500,color:'#e53935',svg:'dragon'},history:{name:'👑 Патша Рухы',hp:450,color:'#7b1fa2',svg:'king'},biology:{name:'🦠 Вирус',hp:400,color:'#388e3c',svg:'virus'},default:{name:'💀 Білімсіздік',hp:500,color:'#b71c1c',svg:'skull'}};
+function getMon(s=''){const sl=s.toLowerCase();if(sl.includes('матем')||sl.includes('алгебр'))return MONS.math;if(sl.includes('тарих'))return MONS.history;if(sl.includes('биол'))return MONS.biology;return MONS.default}
+
+function startMonster(){
+  const mon=getMon(GS.quiz.subject||'');
+  MS.hp=mon.hp;MS.maxHp=mon.hp;MS.cq=0;MS.at=0;MS.ans=false;
+  document.getElementById('boss-nm').textContent=mon.name;
+  updateHpBar();
+  const sv=document.getElementById('mon-svg');
+  sv.style.cssText='width:260px;height:280px;display:flex;align-items:center;justify-content:center';
+  sv.innerHTML=(MON_SVGS[mon.svg]||MON_SVGS.skull)(mon.color);
+  sv.querySelector('svg').style.cssText='width:100%;height:100%;filter:drop-shadow(0 0 28px '+mon.color+'88);animation:mfloat 3s ease-in-out infinite';
+  renderChips('mon-chips',MS.at);
+  go('s-game-mon');
+  setTimeout(()=>nextMonQ(),200);
+}
+
+function updateHpBar(){
+  const pct=Math.max(0,(MS.hp/MS.maxHp)*100);
+  document.getElementById('hp-bar').style.width=pct+'%';
+  document.getElementById('hp-txt').textContent=`${Math.max(0,MS.hp)} / ${MS.maxHp} HP`;
+  if(pct<25)document.getElementById('hp-bar').style.background='linear-gradient(90deg,#b71c1c,#e53935)';
+  else if(pct<50)document.getElementById('hp-bar').style.background='linear-gradient(90deg,#ff6d00,#ffa726)';
+}
+
+function nextMonQ(){
+  if(MS.cq>=GS.shuffled.length||MS.hp<=0){endGame();return}
+  MS.ans=false;
+  const q=GS.shuffled[MS.cq];
+  document.getElementById('mon-qn').textContent=`${MS.cq+1} / ${GS.shuffled.length}`;
+  document.getElementById('mon-qtxt').textContent=q.text;
+  const letters=['A','B','C','D'];
+  document.getElementById('mon-agrid').innerHTML=q.answers.map((a,i)=>`<button class="man-btn ${letters[i]}" style="animation-delay:${i*.06}s" onclick="answerMon(${i})" id="mab-${i}"><span style="opacity:.7;font-size:11px">${letters[i]})</span> ${esc(a)}</button>`).join('');
+  if(GS.timerOn)startMonTmr();
+}
+
+function answerMon(ai){
+  if(MS.ans)return;MS.ans=true;stopMonTmr();
+  const q=GS.shuffled[MS.cq];const ok=ai===q.correct;const team=GS.teams[MS.at];
+  document.querySelectorAll('.man-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('cor');else if(i===ai&&!ok)b.classList.add('wrg')});
+  if(ok){
+    team.streak++;const isCrit=team.streak>=3;
+    const dmg=Math.floor((60+(GS.timerOn?MS.tLeft*2:0))*(isCrit?2:1));
+    team.score+=isCrit?150:100;MS.hp-=dmg;updateHpBar();
+    const sv=document.getElementById('mon-svg');
+    sv.style.animation='none';setTimeout(()=>{sv.querySelector('svg').style.filter='brightness(3) drop-shadow(0 0 30px #ff1744)';setTimeout(()=>{sv.querySelector('svg').style.filter='drop-shadow(0 0 28px '+getMon(GS.quiz.subject||'').color+'88)'},400)},10);
+    showDmg(dmg,isCrit);
+    if(isCrit)SFX.critical();else SFX.correct();
+    showMonPop(rnd(M_CORRECT),true,isCrit?`⚡ CRITICAL! -${dmg} HP`:`-${dmg} HP`);
+  }else{
+    team.streak=0;const pen=20;team.score=Math.max(0,team.score-pen);
+    SFX.wrong();showMonPop(rnd(M_WRONG),false,`Монстр шабуыл! -${pen} ұпай`);
+  }
+  renderChips('mon-chips',MS.at);
+  if(MS.hp<=0){setTimeout(()=>{document.getElementById('mon-svg').style.animation='monsterDeath .8s ease forwards';SFX.monsterDead();GS.teams.forEach(t=>t.score+=200);toast('🏆 МОНСТР ЖЕҢІЛДІ! +200 ұпай!','ok');setTimeout(endGame,1500)},1800);return}
+  setTimeout(()=>{hideMonPop();MS.cq++;MS.at=(MS.at+1)%GS.teams.length;renderChips('mon-chips',MS.at);nextMonQ()},2500);
+}
+
+function showDmg(dmg,crit){
+  const arena=document.querySelector('.mon-arena');if(!arena)return;
+  const el=document.createElement('div');el.className='dmg-num'+(crit?' crit':'');
+  el.textContent=`-${dmg}`;el.style.left=`${15+Math.random()*15}%`;el.style.top=`${20+Math.random()*20}%`;
+  arena.appendChild(el);setTimeout(()=>el.remove(),1300);
+}
+
+function showMonPop(m,ok,sub){
+  const p=document.getElementById('mon-rpop');p.className='rpop';
+  p.innerHTML=`<div class="ri ${ok?'ok':'ng'}"><span class="r-emo">${m.e}</span><h2>${m.t}</h2><p>${m.d}</p><p style="font-size:12px;margin-top:-10px">${sub}</p></div>`;
+}
+function hideMonPop(){document.getElementById('mon-rpop').className='rpop hidden'}
+
+function startMonTmr(){
+  MS.tLeft=GS.timerSecs;
+  updMonTb(MS.tLeft,GS.timerSecs);
+  clearInterval(MS.tmrI);let lt=6;
+  MS.tmrI=setInterval(()=>{MS.tLeft--;updMonTb(MS.tLeft,GS.timerSecs);if(MS.tLeft<=5&&MS.tLeft!==lt){SFX.timerTick();lt=MS.tLeft}if(MS.tLeft<=0){clearInterval(MS.tmrI);if(!MS.ans){MS.ans=true;GS.teams[MS.at].streak=0;SFX.timerEnd();showMonPop(rnd(M_TIME),false,'Уақыт бітті!');setTimeout(()=>{hideMonPop();MS.cq++;MS.at=(MS.at+1)%GS.teams.length;renderChips('mon-chips',MS.at);nextMonQ()},2500)}}},1000);
+}
+function stopMonTmr(){clearInterval(MS.tmrI)}
+function updMonTb(l,tot){const pct=(l/tot)*100;const b=document.getElementById('mon-tb');if(!b)return;b.style.width=pct+'%';b.className='tb'+(pct<25?' dng':pct<50?' warn':'')}
+
+/* =========================================================
+   SOLO MODE (student joins by code)
+   ========================================================= */
+const Solo={quiz:null,code:null,pollI:null};
+
+function startSoloLobby(){
+  Solo.quiz=GS.quiz;Solo.code=GS.roomCode;
+  const room={code:Solo.code,quizTitle:GS.quiz.title,questions:GS.quiz.questions,timerOn:GS.timerOn,timerSecs:GS.timerSecs,active:true,results:[],createdAt:Date.now()};
+  localStorage.setItem(DB.soloKey(Solo.code),JSON.stringify(room));
+  document.getElementById('sl-code').textContent=Solo.code;
+  document.getElementById('sl-qtitle').textContent=GS.quiz.title;
+  document.getElementById('sl-qcnt').textContent=GS.quiz.questions.length+' сұрақ';
+  refreshLB();go('s-slob');SFX.gameStart();
+  Solo.pollI=setInterval(refreshLB,2500);
+}
+
+function refreshLB(){
+  const raw=localStorage.getItem(DB.soloKey(Solo.code));if(!raw)return;
+  const data=JSON.parse(raw);const res=data.results||[];
+  document.getElementById('sl-pcnt').textContent='👥 '+res.length+' оқушы';
+  const lb=document.getElementById('sl-lb');
+  if(!res.length){lb.innerHTML='<p style="text-align:center;color:var(--t2);padding:28px">Оқушылар қосылуда...</p>';return}
+  const sorted=[...res].sort((a,b)=>b.score-a.score);const medals=['🥇','🥈','🥉'];
+  lb.innerHTML=`<div class="sl-lbhdr"><span>#</span><span>Аты</span><span>Ұпай</span><span>Дұрыс</span><span>Уақыт</span></div>`+sorted.map((r,i)=>`<div class="sl-lbrow ${i===0?'top':''}"><span>${medals[i]||(i+1)}</span><span class="lb-nm">${esc(r.name)}</span><span class="lb-sc">${r.score}</span><span class="lb-ok">${r.correct}/${r.total}</span><span class="lb-tm">${r.timeSec}с</span></div>`).join('');
+}
+
+function endSoloRoom(){
+  clearInterval(Solo.pollI);
+  const raw=localStorage.getItem(DB.soloKey(Solo.code));
+  if(raw){const d=JSON.parse(raw);d.active=false;localStorage.setItem(DB.soloKey(Solo.code),JSON.stringify(d))}
+  const res=raw?(JSON.parse(localStorage.getItem(DB.soloKey(Solo.code)))?.results||[]):[];
+  // show results with student list
+  const sorted=[...res].sort((a,b)=>b.score-a.score);const medals=['🥇','🥈','🥉',''];
+  const top3=sorted.slice(0,3);const po=top3.length>=2?[top3[1],top3[0],top3[2]].filter(Boolean):top3;
+  document.getElementById('podium').innerHTML=po.map((r,pi)=>{const rank=sorted.indexOf(r);return`<div class="pod-place" style="animation:podiumRise .6s ${pi*.15}s ease both"><div class="pod-med">${medals[rank]||''}</div><div class="pod-nm">${esc(r.name)}</div><div class="pod-pts">${r.score} ұпай</div><div class="pod-bar" style="height:${[120,160,90][pi]||70}px;background:${['linear-gradient(180deg,#c0c0c0,#808080)','linear-gradient(180deg,var(--gold),#ff8c00)','linear-gradient(180deg,#cd7f32,#8b4513)'][pi]}">${r.score}</div></div>`}).join('');
+  document.getElementById('scores-tbl').innerHTML=`<h3 style="margin-bottom:14px;font-family:var(--fn);font-size:14px">📊 Барлық нәтижелер</h3>`+sorted.map((r,i)=>`<div class="srow"><span>${medals[i]||(i+1)+'.'} ${esc(r.name)}</span><span>${r.correct}/${r.total} дұрыс</span><span style="font-family:var(--fn);color:var(--gold)">${r.score} ұпай</span></div>`).join('');
+  go('s-results');SFX.victory();confetti();
+}
+
+/* Student side */
+const SQ={name:'',qs:[],cq:0,score:0,correct:0,startT:0,timerOn:false,timerSecs:20,tLeft:0,tmrI:null,code:'',ans:false};
+
+function studentJoin(){
+  const code=document.getElementById('sj-code').value.trim();
+  const name=document.getElementById('sj-name').value.trim();
+  if(code.length!==6){toast('⚠️ 6 цифрлы код','err');return}
+  if(!name){toast('⚠️ Атыңызды жазыңыз','err');return}
+  const raw=localStorage.getItem(DB.soloKey(code));
+  if(!raw){toast('❌ Код табылмады','err');return}
+  const data=JSON.parse(raw);
+  if(!data.active){toast('❌ Ойын аяқталды','err');return}
+  SQ.name=name;SQ.qs=[...data.questions].sort(()=>Math.random()-.5);SQ.cq=0;SQ.score=0;SQ.correct=0;
+  SQ.startT=Date.now();SQ.timerOn=data.timerOn;SQ.timerSecs=data.timerSecs||20;SQ.code=code;SQ.ans=false;
+  document.getElementById('sq-title').textContent=data.quizTitle;
+  SFX.gameStart();go('s-stuq');renderSQ();
+}
+
+function renderSQ(){
+  if(SQ.cq>=SQ.qs.length){finishSQ();return}
+  SQ.ans=false;
+  const q=SQ.qs[SQ.cq];const tot=SQ.qs.length;
+  document.getElementById('sq-prog').style.width=(SQ.cq/tot*100)+'%';
+  document.getElementById('sq-qnum').textContent=`${SQ.cq+1}/${tot}`;
+  document.getElementById('sq-qtxt').textContent=q.text;
+  const letters=['A','B','C','D'];
+  document.getElementById('sq-agrid').innerHTML=q.answers.map((a,i)=>`<button class="sq-abtn ${letters[i]}" style="animation-delay:${i*.05}s" onclick="answerSQ(${i})" id="sqb-${i}"><span class="sq-ltr">${letters[i]}</span><span>${esc(a)}</span></button>`).join('');
+  document.getElementById('sq-fb').className='sq-fb hidden';
+  if(SQ.timerOn)startSQTmr();
+}
+
+function answerSQ(ai){
+  if(SQ.ans)return;SQ.ans=true;clearInterval(SQ.tmrI);
+  const q=SQ.qs[SQ.cq];const ok=ai===q.correct;
+  document.querySelectorAll('.sq-abtn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('cor');else if(i===ai&&!ok)b.classList.add('wrg')});
+  if(ok){SQ.correct++;const pts=100+(SQ.timerOn?SQ.tLeft*3:0);SQ.score+=pts;SFX.correct();showSQfb(true,`+${pts} ұпай ✅`)}
+  else{SFX.wrong();showSQfb(false,`Дұрыс: ${String.fromCharCode(65+q.correct)}) ${q.answers[q.correct]}`)}
+  setTimeout(()=>{SQ.cq++;renderSQ()},1600);
+}
+
+function showSQfb(ok,txt){const e=document.getElementById('sq-fb');e.textContent=txt;e.className='sq-fb '+(ok?'ok':'ng')}
+
+function startSQTmr(){
+  SQ.tLeft=SQ.timerSecs;updSQTmr(SQ.tLeft,SQ.timerSecs);clearInterval(SQ.tmrI);let lt=6;
+  SQ.tmrI=setInterval(()=>{SQ.tLeft--;updSQTmr(SQ.tLeft,SQ.timerSecs);if(SQ.tLeft<=5&&SQ.tLeft!==lt){SFX.timerTick();lt=SQ.tLeft}if(SQ.tLeft<=0){clearInterval(SQ.tmrI);if(!SQ.ans){SQ.ans=true;SFX.timerEnd();showSQfb(false,'⌛ Уақыт бітті!');setTimeout(()=>{SQ.cq++;renderSQ()},1600)}}},1000);
+}
+function updSQTmr(l,tot){const pct=(l/tot)*100;const b=document.getElementById('sq-tb'),n=document.getElementById('sq-tnum');if(b)b.style.width=pct+'%';if(b)b.className='sq-tb'+(pct<25?' dng':pct<50?' warn':'');if(n){n.textContent=l;n.className='sq-tmr-num'+(l<=5?' dng':'')}}
+
+function finishSQ(){
+  clearInterval(SQ.tmrI);
+  const timeSec=Math.floor((Date.now()-SQ.startT)/1000);
+  const raw=localStorage.getItem(DB.soloKey(SQ.code));
+  if(raw){const d=JSON.parse(raw);d.results=(d.results||[]).filter(r=>r.name!==SQ.name);d.results.push({name:SQ.name,score:SQ.score,correct:SQ.correct,total:SQ.qs.length,timeSec});localStorage.setItem(DB.soloKey(SQ.code),JSON.stringify(d))}
+  const pct=Math.round(SQ.correct/SQ.qs.length*100);
+  const grd=pct>=90?'5':pct>=70?'4':pct>=50?'3':'2';
+  document.getElementById('sr-emo').textContent=pct>=90?'🏆':pct>=70?'⭐':pct>=50?'👍':'😔';
+  document.getElementById('sr-name').textContent=SQ.name;
+  document.getElementById('sr-grd').textContent=grd;
+  document.getElementById('sr-sc').textContent=SQ.score;
+  document.getElementById('sr-ok').textContent=`${SQ.correct}/${SQ.qs.length}`;
+  document.getElementById('sr-pct').textContent=pct+'%';
+  SFX.soloComplete?SFX.soloComplete():SFX.correct();
+  if(pct>=70)particles();
+  go('s-sres');
+}
+// Add soloComplete to SFX
+SFX.soloComplete=()=>{const c=new(window.AudioContext||window.webkitAudioContext)();const notes=[{f:523,d:.12,v:.3},{f:784,d:.12,v:.35},{f:1047,d:.25,v:.4}];let t=c.currentTime;notes.forEach(n=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.value=n.f;g.gain.value=n.v;g.gain.exponentialRampToValueAtTime(.001,t+n.d);o.start(t);o.stop(t+n.d);t+=n.d});};
+
+/* =========================================================
+   END GAME / RESULTS
+   ========================================================= */
+function endGame(){
+  stopTmr();stopMonTmr();SFX.victory();
+  const sorted=[...GS.teams].sort((a,b)=>b.score-a.score);const medals=['🥇','🥈','🥉',''];
+  const top3=sorted.slice(0,3);const po=top3.length>=2?[top3[1],top3[0],top3[2]].filter(Boolean):top3;
+  document.getElementById('podium').innerHTML=po.map((t,pi)=>{const rank=sorted.indexOf(t);return`<div class="pod-place" style="animation:podiumRise .6s ${pi*.15}s ease both"><div class="pod-med">${medals[rank]||''}</div><div class="pod-nm">${t.animal} ${esc(t.name)}</div><div class="pod-pts">${t.score} ұпай</div><div class="pod-bar" style="height:${[120,160,90][pi]||70}px;background:${['linear-gradient(180deg,#c0c0c0,#808080)','linear-gradient(180deg,var(--gold),#ff8c00)','linear-gradient(180deg,#cd7f32,#8b4513)'][pi]}">${t.score}</div></div>`}).join('');
+  document.getElementById('scores-tbl').innerHTML=`<h3 style="margin-bottom:14px;font-family:var(--fn);font-size:14px">📊 Нәтижелер</h3>`+sorted.map((t,i)=>`<div class="srow"><span>${medals[i]||(i+1)+'.'} ${t.animal} ${esc(t.name)}</span><span style="font-family:var(--fn);color:var(--gold)">${t.score} ұпай</span></div>`).join('');
+  go('s-results');confetti();
+}
+
+function restartGame(){
+  if(GS.mode&&GS.quiz)pickMode(GS.mode,GS.quiz.id);else go('s-dash');
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.addEventListener('DOMContentLoaded',restoreSession);
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  if(document.getElementById('f-login').classList.contains('hidden'))doRegister();
+  else doLogin();
+});
+</script>
+</body>
+</html>
